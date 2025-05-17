@@ -4,6 +4,7 @@ use super::setup;
 
 #[unsafe(no_mangle)]
 #[unsafe(naked)]
+#[unsafe(link_section = ".text.init")]
 extern "C" fn _start() -> ! {
     #[allow(unused_unsafe)]
     unsafe {

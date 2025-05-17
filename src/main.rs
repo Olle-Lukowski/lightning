@@ -7,6 +7,7 @@
 use core::{hint::spin_loop, panic::PanicInfo};
 
 mod hal;
+#[cfg(test)]
 mod testing;
 
 pub fn main() {

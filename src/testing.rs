@@ -1,7 +1,11 @@
 pub struct Test {
-    name: &'static str,
-    should_fail: bool,
-    func: fn() -> Result<&'static str, &'static str>,
+    pub name: &'static str,
+    pub should_fail: bool,
+    pub func: fn() -> Result<&'static str, &'static str>,
 }
 
-pub fn runner(_tests: &[&Test]) {}
+pub fn runner(tests: &[&Test]) {
+    for test in tests {
+        (test.func)().expect("FAIL");
+    }
+}
