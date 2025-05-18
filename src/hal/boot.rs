@@ -1,3 +1,5 @@
+use core::slice;
+
 use crate::main;
 
 use super::interrupts;
@@ -26,7 +28,24 @@ fn setup() -> ! {
     // RISC-V:
     //   We are running in M-mode.
     if unsafe { is_primary_core() } {
-        // TODO
+        // SAFETY: We depend on the symbols being properly defined at link time.
+        unsafe extern "C" {
+            unsafe static mut __bss_start: u8;
+            unsafe static __bss_end: u8;
+        }
+
+        // SAFETY: We depend on the symbols being properly defined at link time.
+        let bss = unsafe {
+            slice::from_raw_parts_mut(
+                &raw mut __bss_start,
+                (&raw const __bss_end)
+                    .offset_from(&raw const __bss_start)
+                    .try_into()
+                    .expect("bss start is before bss end!"),
+            )
+        };
+
+        bss.fill(0);
     }
 
     loop {
