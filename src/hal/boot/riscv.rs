@@ -1,5 +1,7 @@
 use core::arch::naked_asm;
 
+use crate::hal::arch::riscv::csr::MHartId;
+
 use super::setup;
 
 #[unsafe(no_mangle)]
@@ -18,4 +20,13 @@ extern "C" fn _start() -> ! {
             sym setup,
         )
     };
+}
+
+/// Returns whether the hart running this code is the primary hart.
+///
+/// # Safety
+/// See [`MHartId::read`] for details about safety.
+pub(crate) unsafe fn is_primary_hart() -> bool {
+    // SAFETY: Caller guarantees the safety contract is upheld
+    unsafe { MHartId::read() }.id() == 0
 }

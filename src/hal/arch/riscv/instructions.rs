@@ -1,5 +1,7 @@
 use core::arch::asm;
 
+pub mod csr;
+
 /// Wait for the next interrupt (WFI instruction).
 ///
 /// # Safety
