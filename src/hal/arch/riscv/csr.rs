@@ -2,6 +2,7 @@ use arbitrary_int::u12;
 
 use super::instructions::csr;
 
+/// An integer ID of a hardware thread.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MHartId(usize);
 
@@ -25,6 +26,7 @@ impl MHartId {
     /// The caller must ensure the hart running this code is currently in M-mode.
     pub unsafe fn read() -> Self {
         // SAFETY: Caller guarantees the safety contract is upheld
+        // The `ADDR`` we are using is valid
         unsafe { csr::read::<{ Self::ADDR }>().into() }
     }
 }
