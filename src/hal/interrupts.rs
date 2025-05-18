@@ -5,6 +5,7 @@ use super::arch::riscv::instructions::wfi;
 /// In most cases this will map to a single hardware instruction.
 ///
 /// # Safety
+///
 #[cfg_attr(
     any(target_arch = "riscv32", target_arch = "riscv64"),
     doc = "See [`wfi`] for details about safety"

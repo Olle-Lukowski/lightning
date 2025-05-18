@@ -22,10 +22,16 @@ extern "C" fn _start() -> ! {
     };
 }
 
-/// Returns whether the hart running this code is the primary hart.
+/// Checks if the current hart is the primary one.
+///
+/// # Returns
+///
+/// Whether the hart running this code is the primary hart.
 ///
 /// # Safety
+///
 /// See [`MHartId::read`] for details about safety.
+///
 pub(crate) unsafe fn is_primary_hart() -> bool {
     // SAFETY: Caller guarantees the safety contract is upheld
     unsafe { MHartId::read() }.id() == 0

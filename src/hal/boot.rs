@@ -10,6 +10,7 @@ mod riscv;
 /// Check whether the currently running core is the primary one of the system.
 ///
 /// # Safety
+///
 #[cfg_attr(
     any(target_arch = "riscv32", target_arch = "riscv64"),
     doc = "See [`riscv::is_primary_hart`] for details about safety."

@@ -22,8 +22,14 @@ impl MHartId {
 
     /// Read the [`MHartId`] from the CSR.
     ///
+    /// # Returns
+    ///
+    /// The [`MHartId`] value of the current hart.
+    ///
     /// # Safety
+    ///
     /// The caller must ensure the hart running this code is currently in M-mode.
+    ///
     pub unsafe fn read() -> Self {
         // SAFETY: Caller guarantees the safety contract is upheld
         // The `ADDR`` we are using is valid

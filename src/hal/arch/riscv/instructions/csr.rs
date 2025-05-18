@@ -2,6 +2,10 @@ use core::arch::asm;
 
 /// Read from a Control and Status Register (CSR) at the given address.
 ///
+/// # Returns
+///
+/// The value of the CSR.
+///
 /// # Safety
 ///
 /// - The caller must ensure that `ADDR` is a valid CSR address and that reading
@@ -12,6 +16,7 @@ use core::arch::asm;
 ///
 /// Panics in debug mode if `ADDR` does not fit in the 12-bit immediate field
 /// of the RISC-V instruction encoding (i.e., if `ADDR >= 1 << 12`).
+///
 pub unsafe fn read<const ADDR: u16>() -> usize {
     debug_assert!(ADDR < (1 << 12), "CSR address must be 12 bits");
     let result: usize;
@@ -22,9 +27,6 @@ pub unsafe fn read<const ADDR: u16>() -> usize {
 
 /// Write to a Control and Status Register (CSR) at the given address.
 ///
-/// # Returns
-///
-/// The current value of the CSR.
 ///
 /// # Safety
 ///
@@ -37,6 +39,7 @@ pub unsafe fn read<const ADDR: u16>() -> usize {
 ///
 /// Panics in debug mode if `ADDR` does not fit in the 12-bit immediate field
 /// of the RISC-V instruction encoding (i.e., if `ADDR >= 1 << 12`).
+///
 pub unsafe fn write<const ADDR: u16>(value: usize) {
     debug_assert!(ADDR < (1 << 12), "CSR address must be 12 bits");
     unsafe { asm!("csrw {addr}, {value}", addr = const ADDR, value = in(reg) value) }
@@ -46,7 +49,6 @@ pub unsafe fn write<const ADDR: u16>(value: usize) {
 ///
 /// # Safety
 ///
-///
 /// - The caller must ensure that `ADDR` is a valid CSR address and that writing
 ///   to it is safe in the current context.
 /// - The caller must ensure that the CSR at `ADDR` is writable.
@@ -56,6 +58,7 @@ pub unsafe fn write<const ADDR: u16>(value: usize) {
 ///
 /// Panics in debug mode if `ADDR` does not fit in the 12-bit immediate field
 /// of the RISC-V instruction encoding (i.e., if `ADDR >= 1 << 12`).
+///
 pub unsafe fn set<const ADDR: u16>(mask: usize) {
     debug_assert!(ADDR < (1 << 12), "CSR address must be 12 bits");
     unsafe {
@@ -72,7 +75,6 @@ pub unsafe fn set<const ADDR: u16>(mask: usize) {
 ///
 /// # Safety
 ///
-///
 /// - The caller must ensure that `ADDR` is a valid CSR address and that writing
 ///   to it is safe in the current context.
 /// - The caller must ensure that the CSR at `ADDR` is writable.
@@ -82,6 +84,7 @@ pub unsafe fn set<const ADDR: u16>(mask: usize) {
 ///
 /// Panics in debug mode if `ADDR` does not fit in the 12-bit immediate field
 /// of the RISC-V instruction encoding (i.e., if `ADDR >= 1 << 12`).
+///
 pub unsafe fn clear<const ADDR: u16>(mask: usize) {
     debug_assert!(ADDR < (1 << 12), "CSR address must be 12 bits");
     unsafe {
@@ -112,6 +115,7 @@ pub unsafe fn clear<const ADDR: u16>(mask: usize) {
 ///
 /// Panics in debug mode if `ADDR` does not fit in the 12-bit immediate field
 /// of the RISC-V instruction encoding (i.e., if `ADDR >= 1 << 12`).
+///
 pub unsafe fn read_set<const ADDR: u16>(mask: usize) -> usize {
     debug_assert!(ADDR < (1 << 12), "CSR address must be 12 bits");
     let result: usize;
@@ -145,6 +149,7 @@ pub unsafe fn read_set<const ADDR: u16>(mask: usize) -> usize {
 ///
 /// Panics in debug mode if `ADDR` does not fit in the 12-bit immediate field
 /// of the RISC-V instruction encoding (i.e., if `ADDR >= 1 << 12`).
+///
 pub unsafe fn read_clear<const ADDR: u16>(mask: usize) -> usize {
     debug_assert!(ADDR < (1 << 12), "CSR address must be 12 bits");
     let result: usize;
