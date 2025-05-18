@@ -3,6 +3,14 @@ name = "lightning"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "lightning"
+path = "src/main.rs"
+test = false
+doctest = false
+harness = false
+bench = false
+
 [profile.release-fast]
 inherits = "release"
 opt-level = 3

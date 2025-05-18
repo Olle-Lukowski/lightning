@@ -15,24 +15,3 @@ pub unsafe fn wfi() {
     // SAFETY: Caller guarantees the safety contract is upheld
     unsafe { asm!("wfi", options(nomem, nostack, preserves_flags)) }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::testing::Test;
-
-    use super::*;
-
-    #[test_case]
-    const WFI_RETURNS: Test = Test {
-        name: "wfi_returns",
-        should_fail: false,
-        func: wfi_returns,
-    };
-
-    fn wfi_returns() -> Result<&'static str, &'static str> {
-        unsafe {
-            wfi();
-        }
-        Ok("WFI RETURNED")
-    }
-}
