@@ -9,5 +9,5 @@ runner = "qemu-system-riscv32 -bios none -machine virt -serial mon:stdio -nograp
 rustflags = ["-C", "link-args=-Tsrc/hal/lds/riscv.lds"]
 
 [target.riscv32e-unknown-none-elf]
-runner = "qemu-system-riscv32 -cpu rv32e,zicsr=true -bios none -machine virt -serial mon:stdio -nographic -kernel"
+runner = "qemu-system-riscv32 -cpu rv32e,zicsr=true,u=true,s=true,pmp=true -bios none -machine virt -serial mon:stdio -nographic -kernel"
 rustflags = ["-C", "link-args=-Tsrc/hal/lds/riscv.lds"]

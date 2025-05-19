@@ -1,6 +1,9 @@
 use core::slice;
 
-use crate::main;
+use crate::{
+    hal::execution::{self, Environment as _},
+    main,
+};
 
 use super::interrupts;
 
@@ -49,6 +52,12 @@ fn setup() -> ! {
 
     bss.fill(0);
 
+    #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
+    // SAFETY: TODO
+    unsafe {
+        execution::riscv::ExecutionEnvironment::new().activate()
+    };
+
     main();
 
     park()
@@ -56,11 +65,6 @@ fn setup() -> ! {
 
 fn park() -> ! {
     loop {
-        // SAFETY:
-        // RISC-V:
-        //   We are done setting everything up, we are not holding any locks.
-        //   It is safe to block. Even if interrupts are disabled,
-        //   we are fine with not continuing past this point.
-        unsafe { interrupts::wait() }
+        interrupts::wait()
     }
 }

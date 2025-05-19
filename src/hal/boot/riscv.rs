@@ -1,6 +1,6 @@
 use core::arch::naked_asm;
 
-use crate::hal::arch::riscv::csr::MHartId;
+use riscv::register::mhartid;
 
 use super::setup;
 
@@ -34,5 +34,5 @@ extern "C" fn _start() -> ! {
 ///
 pub(crate) unsafe fn is_primary_hart() -> bool {
     // SAFETY: Caller guarantees the safety contract is upheld
-    unsafe { MHartId::read() }.id() == 0
+    mhartid::read() == 0
 }
