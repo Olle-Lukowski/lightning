@@ -11,6 +11,11 @@ doctest = false
 harness = false
 bench = false
 
+[features]
+default = ["riscv_pmp"]
+riscv_pmp = ["riscv_zicsr"]
+riscv_zicsr = []
+
 [profile.release-fast]
 inherits = "release"
 opt-level = 3

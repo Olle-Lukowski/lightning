@@ -1,15 +1,17 @@
 use core::arch::asm;
 
+#[cfg(feature = "riscv_zicsr")]
 use riscv::register::{
-    Permission, Range,
     medeleg::{self, Medeleg},
     mepc,
     mideleg::{self, Mideleg},
     misa,
     mstatus::{self, MPP},
-    pmpaddr0, pmpcfg0,
     satp::{self, Satp},
 };
+
+#[cfg(feature = "riscv_pmp")]
+use riscv::register::{Permission, Range, pmpaddr0, pmpcfg0};
 
 use crate::main;
 
@@ -37,20 +39,28 @@ impl ExecutionEnvironment {
     /// Will prefer U-mode for user space, falling back to M-mode if unavailable.
     ///
     pub fn new() -> ExecutionEnvironment {
-        let isa = misa::read();
-        let kernel = if isa.has_extension('S') {
-            Mode::Supervisor
-        } else {
-            Mode::Machine
-        };
+        #[cfg(feature = "riscv_zicsr")]
+        {
+            let isa = misa::read();
+            let kernel = if isa.has_extension('S') {
+                Mode::Supervisor
+            } else {
+                Mode::Machine
+            };
 
-        let user = if isa.has_extension('U') {
-            Mode::User
-        } else {
-            Mode::Machine
-        };
+            let user = if isa.has_extension('U') {
+                Mode::User
+            } else {
+                Mode::Machine
+            };
 
-        ExecutionEnvironment { kernel, user }
+            ExecutionEnvironment { kernel, user }
+        }
+        #[cfg(not(feature = "riscv_zicsr"))]
+        ExecutionEnvironment {
+            kernel: Mode::Machine,
+            user: Mode::Machine,
+        }
     }
 }
 
@@ -63,6 +73,7 @@ impl Environment for ExecutionEnvironment {
     /// A valid M-mode trap handler must be active.
     ///
     unsafe fn activate(&self) {
+        #[cfg(feature = "riscv_zicsr")]
         if self.kernel == Mode::Supervisor {
             // switch to supervisor mode
 
@@ -78,8 +89,11 @@ impl Environment for ExecutionEnvironment {
                 mideleg::write(Mideleg::from_bits(!0));
 
                 // Allow supervisor mode to access all physical memory
-                pmpcfg0::set_pmp(0, Range::NAPOT, Permission::RWX, false);
-                pmpaddr0::write(!0);
+                #[cfg(feature = "riscv_pmp")]
+                {
+                    pmpcfg0::set_pmp(0, Range::NAPOT, Permission::RWX, false);
+                    pmpaddr0::write(!0);
+                }
 
                 // Everything is set up, time for S-mode!
                 mepc::write(main as usize);

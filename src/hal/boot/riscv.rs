@@ -1,5 +1,6 @@
 use core::arch::naked_asm;
 
+#[cfg(feature = "riscv_zicsr")]
 use riscv::register::mhartid;
 
 use super::setup;
@@ -28,11 +29,9 @@ extern "C" fn _start() -> ! {
 ///
 /// Whether the hart running this code is the primary hart.
 ///
-/// # Safety
-///
-/// See [`MHartId::read`] for details about safety.
-///
-pub(crate) unsafe fn is_primary_hart() -> bool {
-    // SAFETY: Caller guarantees the safety contract is upheld
-    mhartid::read() == 0
+pub(crate) fn is_primary_hart() -> bool {
+    #[cfg(feature = "riscv_zicsr")]
+    return mhartid::read() == 0;
+    #[cfg(not(feature = "riscv_zicsr"))]
+    return true; // We can't check if this is the primary hart
 }
