@@ -1,6 +1,5 @@
 use core::arch::asm;
 
-#[cfg(feature = "riscv_zicsr")]
 use riscv::register::{
     medeleg::{self, Medeleg},
     mepc,
@@ -19,7 +18,7 @@ use super::Environment;
 
 /// A privilege mode of a hart
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum Mode {
+pub enum Mode {
     #[default]
     Machine,
     Supervisor,
@@ -39,28 +38,20 @@ impl ExecutionEnvironment {
     /// Will prefer U-mode for user space, falling back to M-mode if unavailable.
     ///
     pub fn new() -> ExecutionEnvironment {
-        #[cfg(feature = "riscv_zicsr")]
-        {
-            let isa = misa::read();
-            let kernel = if isa.has_extension('S') {
-                Mode::Supervisor
-            } else {
-                Mode::Machine
-            };
+        let isa = misa::read();
+        let kernel = if isa.has_extension('S') {
+            Mode::Supervisor
+        } else {
+            Mode::Machine
+        };
 
-            let user = if isa.has_extension('U') {
-                Mode::User
-            } else {
-                Mode::Machine
-            };
+        let user = if isa.has_extension('U') {
+            Mode::User
+        } else {
+            Mode::Machine
+        };
 
-            ExecutionEnvironment { kernel, user }
-        }
-        #[cfg(not(feature = "riscv_zicsr"))]
-        ExecutionEnvironment {
-            kernel: Mode::Machine,
-            user: Mode::Machine,
-        }
+        ExecutionEnvironment { kernel, user }
     }
 }
 
@@ -73,7 +64,6 @@ impl Environment for ExecutionEnvironment {
     /// A valid M-mode trap handler must be active.
     ///
     unsafe fn activate(&self) {
-        #[cfg(feature = "riscv_zicsr")]
         if self.kernel == Mode::Supervisor {
             // switch to supervisor mode
 

@@ -13,8 +13,8 @@ bench = false
 
 [features]
 default = ["riscv_pmp"]
-riscv_pmp = ["riscv_zicsr"]
-riscv_zicsr = []
+riscv_pmp = []
+riscv_isa_e = []
 
 [profile.release-fast]
 inherits = "release"

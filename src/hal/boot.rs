@@ -1,20 +1,15 @@
 use core::slice;
 
-use crate::{
-    hal::execution::{self, Environment as _},
-    main,
+use crate::hal::{
+    core::{is_primary_core, load_boot_core_state},
+    execution::{self, Environment as _},
+    trap::setup_trap_handler,
 };
 
 use super::interrupts;
 
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 mod riscv;
-
-/// Check whether the currently running core is the primary one of the system.
-pub fn is_primary_core() -> bool {
-    #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
-    riscv::is_primary_hart()
-}
 
 fn setup() -> ! {
     if !is_primary_core() {
@@ -40,13 +35,16 @@ fn setup() -> ! {
 
     bss.fill(0);
 
+    load_boot_core_state();
+
+    setup_trap_handler();
+
+    // Everything is set up, kernel time! (activating the environment will jump to the kernel)
     #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
-    // SAFETY: TODO
+    // SAFETY: Trap handler is properly set up.
     unsafe {
         execution::riscv::ExecutionEnvironment::new().activate()
     };
-
-    main();
 
     park()
 }
