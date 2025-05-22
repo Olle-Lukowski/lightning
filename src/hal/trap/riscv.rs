@@ -3,13 +3,17 @@ use core::arch::naked_asm;
 use riscv::{
     interrupt::{Exception, Interrupt},
     register::{
-        mcause, mscratch,
+        mcause, mscratch, mstatus,
         mtvec::{self, Mtvec},
-        stvec::TrapMode,
+        scause, sscratch,
+        stvec::{self, Stvec, TrapMode},
     },
 };
 
-use crate::hal::core::CoreState;
+use crate::hal::{
+    core::{Core, CoreState},
+    execution::riscv::Mode,
+};
 
 use super::{Trap, handle_trap};
 
@@ -236,9 +240,231 @@ pub(crate) unsafe extern "C" fn machine_trap_entry() {
     }
 }
 
-fn machine_trap() {
-    let trap = mcause::read().cause();
-    let trap = match trap.try_into::<Interrupt, Exception>() {
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn supervisor_trap_entry() {
+    #[allow(unused_unsafe)]
+    unsafe {
+        #[cfg(all(target_arch = "riscv32", feature = "riscv_isa_e"))]
+        naked_asm!(
+            "addi sp, sp, -64",
+            "sw x1, 0(sp)",
+            "sw x2, 4(sp)",
+            "sw x3, 8(sp)",
+            "sw x4, 12(sp)",
+            "sw x5, 16(sp)",
+            "sw x6, 20(sp)",
+            "sw x7, 24(sp)",
+            "sw x8, 28(sp)",
+            "sw x9, 32(sp)",
+            "sw x10, 36(sp)",
+            "sw x11, 40(sp)",
+            "sw x12, 44(sp)",
+            "sw x13, 48(sp)",
+            "sw x14, 52(sp)",
+            "sw x15, 56(sp)",
+            "call {}",
+            "lw x15, 56(sp)",
+            "lw x14, 52(sp)",
+            "lw x13, 48(sp)",
+            "lw x12, 44(sp)",
+            "lw x11, 40(sp)",
+            "lw x10, 36(sp)",
+            "lw x9, 32(sp)",
+            "lw x8, 28(sp)",
+            "lw x7, 24(sp)",
+            "lw x6, 20(sp)",
+            "lw x5, 16(sp)",
+            "lw x4, 12(sp)",
+            "lw x3, 8(sp)",
+            "lw x2, 4(sp)",
+            "lw x1, 0(sp)",
+            "addi sp, sp, 64",
+            "sret",
+            sym supervisor_trap,
+        );
+        #[cfg(all(target_arch = "riscv32", not(feature = "riscv_isa_e")))]
+        naked_asm!(
+            "addi sp, sp, -128", // twice as many registers in the I isa compared to E
+            "sw x1, 0(sp)",
+            "sw x2, 4(sp)",
+            "sw x3, 8(sp)",
+            "sw x4, 12(sp)",
+            "sw x5, 16(sp)",
+            "sw x6, 20(sp)",
+            "sw x7, 24(sp)",
+            "sw x8, 28(sp)",
+            "sw x9, 32(sp)",
+            "sw x10, 36(sp)",
+            "sw x11, 40(sp)",
+            "sw x12, 44(sp)",
+            "sw x13, 48(sp)",
+            "sw x14, 52(sp)",
+            "sw x15, 56(sp)",
+            "sw x16, 60(sp)",
+            "sw x17, 64(sp)",
+            "sw x18, 68(sp)",
+            "sw x19, 72(sp)",
+            "sw x20, 76(sp)",
+            "sw x21, 80(sp)",
+            "sw x22, 84(sp)",
+            "sw x23, 88(sp)",
+            "sw x24, 92(sp)",
+            "sw x25, 96(sp)",
+            "sw x26, 100(sp)",
+            "sw x27, 104(sp)",
+            "sw x28, 108(sp)",
+            "sw x29, 112(sp)",
+            "sw x30, 116(sp)",
+            "sw x31, 120(sp)",
+            "call {}",
+            "lw x31, 120(sp)",
+            "lw x30, 116(sp)",
+            "lw x29, 112(sp)",
+            "lw x28, 108(sp)",
+            "lw x27, 104(sp)",
+            "lw x26, 100(sp)",
+            "lw x25, 96(sp)",
+            "lw x24, 92(sp)",
+            "lw x23, 88(sp)",
+            "lw x22, 84(sp)",
+            "lw x21, 80(sp)",
+            "lw x20, 76(sp)",
+            "lw x19, 72(sp)",
+            "lw x18, 68(sp)",
+            "lw x17, 64(sp)",
+            "lw x16, 60(sp)",
+            "lw x15, 56(sp)",
+            "lw x14, 52(sp)",
+            "lw x13, 48(sp)",
+            "lw x12, 44(sp)",
+            "lw x11, 40(sp)",
+            "lw x10, 36(sp)",
+            "lw x9, 32(sp)",
+            "lw x8, 28(sp)",
+            "lw x7, 24(sp)",
+            "lw x6, 20(sp)",
+            "lw x5, 16(sp)",
+            "lw x4, 12(sp)",
+            "lw x3, 8(sp)",
+            "lw x2, 4(sp)",
+            "lw x1, 0(sp)",
+            "addi sp, sp, 128",
+            "sret",
+            sym supervisor_trap,
+        );
+        #[cfg(all(target_arch = "riscv64", feature = "riscv_isa_e"))]
+        naked_asm!(
+            "addi sp, sp, -128", // 16 8 byte registers
+            "sd x1, 0(sp)",
+            "sd x2, 8(sp)",
+            "sd x3, 16(sp)",
+            "sd x4, 24(sp)",
+            "sd x5, 32(sp)",
+            "sd x6, 40(sp)",
+            "sd x7, 48(sp)",
+            "sd x8, 56(sp)",
+            "sd x9, 64(sp)",
+            "sd x10, 72(sp)",
+            "sd x11, 80(sp)",
+            "sd x12, 88(sp)",
+            "sd x13, 96(sp)",
+            "sd x14, 104(sp)",
+            "sd x15, 112(sp)",
+            "call {}",
+            "ld x15, 112(sp)",
+            "ld x14, 104(sp)",
+            "ld x13, 96(sp)",
+            "ld x12, 88(sp)",
+            "ld x11, 80(sp)",
+            "ld x10, 72(sp)",
+            "ld x9, 64(sp)",
+            "ld x8, 56(sp)",
+            "ld x7, 48(sp)",
+            "ld x6, 40(sp)",
+            "ld x5, 32(sp)",
+            "ld x4, 24(sp)",
+            "ld x3, 16(sp)",
+            "ld x2, 8(sp)",
+            "ld x1, 0(sp)",
+            "addi sp, sp, 128",
+            "sret",
+            sym supervisor_trap,
+        );
+        #[cfg(all(target_arch = "riscv64", not(feature = "riscv_isa_e")))]
+        naked_asm!(
+            "addi sp, sp, -256", // 32 8 byte registers
+            "sd x1, 0(sp)",
+            "sd x2, 8(sp)",
+            "sd x3, 16(sp)",
+            "sd x4, 24(sp)",
+            "sd x5, 32(sp)",
+            "sd x6, 40(sp)",
+            "sd x7, 48(sp)",
+            "sd x8, 56(sp)",
+            "sd x9, 64(sp)",
+            "sd x10, 72(sp)",
+            "sd x11, 80(sp)",
+            "sd x12, 88(sp)",
+            "sd x13, 96(sp)",
+            "sd x14, 104(sp)",
+            "sd x15, 112(sp)",
+            "sd x16, 120(sp)",
+            "sd x17, 128(sp)",
+            "sd x18, 136(sp)",
+            "sd x19, 144(sp)",
+            "sd x20, 152(sp)",
+            "sd x21, 160(sp)",
+            "sd x22, 168(sp)",
+            "sd x23, 176(sp)",
+            "sd x24, 184(sp)",
+            "sd x25, 192(sp)",
+            "sd x26, 200(sp)",
+            "sd x27, 208(sp)",
+            "sd x28, 216(sp)",
+            "sd x29, 224(sp)",
+            "sd x30, 232(sp)",
+            "sd x31, 240(sp)",
+            "call {}",
+            "ld x31, 240(sp)",
+            "ld x30, 232(sp)",
+            "ld x29, 224(sp)",
+            "ld x28, 216(sp)",
+            "ld x27, 208(sp)",
+            "ld x26, 200(sp)",
+            "ld x25, 192(sp)",
+            "ld x24, 184(sp)",
+            "ld x23, 176(sp)",
+            "ld x22, 168(sp)",
+            "ld x21, 160(sp)",
+            "ld x20, 152(sp)",
+            "ld x19, 144(sp)",
+            "ld x18, 136(sp)",
+            "ld x17, 128(sp)",
+            "ld x16, 120(sp)",
+            "ld x15, 112(sp)",
+            "ld x14, 104(sp)",
+            "ld x13, 96(sp)",
+            "ld x12, 88(sp)",
+            "ld x11, 80(sp)",
+            "ld x10, 72(sp)",
+            "ld x9, 64(sp)",
+            "ld x8, 56(sp)",
+            "ld x7, 48(sp)",
+            "ld x6, 40(sp)",
+            "ld x5, 32(sp)",
+            "ld x4, 24(sp)",
+            "ld x3, 16(sp)",
+            "ld x2, 8(sp)",
+            "ld x1, 0(sp)",
+            "addi sp, sp, 256",
+            "sret",
+            sym supervisor_trap,
+        );
+    }
+}
+
+fn convert_trap(trap: riscv::interrupt::Trap<usize, usize>) -> Trap {
+    match trap.try_into::<Interrupt, Exception>() {
         Ok(trap) => match trap {
             mcause::Trap::Interrupt(int) => match int {
                 Interrupt::MachineTimer | Interrupt::SupervisorTimer => Trap::Timer,
@@ -266,18 +492,44 @@ fn machine_trap() {
             mcause::Trap::Interrupt(code) => Trap::Unknown(code),
             mcause::Trap::Exception(code) => Trap::Unknown(code),
         },
-    };
+    }
+}
 
-    let handler = unsafe { &*(mscratch::read() as *const CoreState) };
+fn machine_trap() {
+    let trap = mcause::read().cause();
+    let trap = convert_trap(trap);
+
+    let state = unsafe { &*(mscratch::read() as *const CoreState) };
+    if state.env.kernel == Mode::Machine {
+        handle_trap(state, trap);
+    }
+}
+
+fn supervisor_trap() {
+    let trap = scause::read().cause();
+    let trap = convert_trap(trap);
+
+    let handler = unsafe { &*(sscratch::read() as *const CoreState) };
     handle_trap(handler, trap);
 }
 
-pub(crate) fn setup_trap_handler() {
+pub(crate) fn setup_trap_handler(core: &Core) {
     let mut mvec = Mtvec::from_bits(0);
     mvec.set_trap_mode(TrapMode::Direct);
     mvec.set_address(machine_trap_entry as usize);
     // SAFETY: The `mvec` is properly set up.
     unsafe {
         mtvec::write(mvec);
+    }
+
+    if core.state.env.kernel == Mode::Supervisor {
+        let mut svec = Stvec::from_bits(0);
+        svec.set_address(supervisor_trap_entry as usize);
+
+        // SAFETY: The `svec` is properly set up.
+        unsafe {
+            stvec::write(svec);
+            mstatus::set_sie();
+        }
     }
 }

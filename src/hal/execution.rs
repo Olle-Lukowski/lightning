@@ -10,5 +10,5 @@ pub trait Environment {
     ///
     /// Different implementors may have different safety requirements, check their docs.
     ///
-    unsafe fn activate(&self);
+    unsafe fn activate(&self) -> !;
 }

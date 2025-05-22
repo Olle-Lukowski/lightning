@@ -3,11 +3,15 @@
 
 use core::{hint::spin_loop, panic::PanicInfo};
 
-use hal::trap::Trap;
+use hal::{interrupts, trap::Trap};
 
 mod hal;
 
-pub fn main() {}
+pub fn main() -> ! {
+    loop {
+        interrupts::wait()
+    }
+}
 
 pub fn handle_trap(_trap: Trap) {}
 

@@ -1,8 +1,8 @@
 use core::slice;
 
 use crate::hal::{
-    core::{is_primary_core, load_boot_core_state},
-    execution::{self, Environment as _},
+    core::{CoreState, is_primary_core},
+    execution::Environment as _,
     trap::setup_trap_handler,
 };
 
@@ -35,18 +35,17 @@ fn setup() -> ! {
 
     bss.fill(0);
 
-    load_boot_core_state();
+    let state = CoreState::new();
+    let core = state.load();
 
-    setup_trap_handler();
+    setup_trap_handler(&core);
 
     // Everything is set up, kernel time! (activating the environment will jump to the kernel)
     #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
     // SAFETY: Trap handler is properly set up.
     unsafe {
-        execution::riscv::ExecutionEnvironment::new().activate()
-    };
-
-    park()
+        core.state.env.activate()
+    }
 }
 
 fn park() -> ! {

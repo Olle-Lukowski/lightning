@@ -1,4 +1,4 @@
-use super::core::CoreState;
+use super::core::{Core, CoreState};
 
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 mod riscv;
@@ -33,7 +33,7 @@ fn handle_trap(state: &CoreState, trap: Trap) {
     state.handle_trap(trap)
 }
 
-pub fn setup_trap_handler() {
+pub fn setup_trap_handler(core: &Core) {
     #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
-    riscv::setup_trap_handler()
+    riscv::setup_trap_handler(core)
 }

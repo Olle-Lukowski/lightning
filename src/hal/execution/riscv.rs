@@ -63,7 +63,7 @@ impl Environment for ExecutionEnvironment {
     /// MUST be called in M-mode, with no virtual memory set up.
     /// A valid M-mode trap handler must be active.
     ///
-    unsafe fn activate(&self) {
+    unsafe fn activate(&self) -> ! {
         if self.kernel == Mode::Supervisor {
             // switch to supervisor mode
 
@@ -89,8 +89,11 @@ impl Environment for ExecutionEnvironment {
                 mepc::write(main as usize);
                 mstatus::set_mpp(MPP::Supervisor);
 
-                asm!("la ra, 1f", "mret", "1:");
+                asm!("mret", options(noreturn));
             }
+        } else {
+            // Just call the kernel directly
+            main()
         }
     }
 }
